@@ -1,4 +1,8 @@
 const db = require("../models");
+// const multer = require('multer');
+const xlsx = require('xlsx');
+// const storage = multer.memoryStorage();
+// const upload = multer({ storage: storage });
 const Product = db.products;
 // Create and Save a new Product
 exports.create = (req, res) => {
@@ -15,15 +19,15 @@ exports.create = (req, res) => {
     .sort({ createdAt: -1 }) // -1 mean take the lastest product created
     .then(latestProduct => {
       //create first product
-      if(!latestProduct) {
+      if (!latestProduct) {
         req.body._id = 'SP01';
       }
       //create auto increment product id
-      else{
-        var temp = (latestProduct._id).substring(2, (latestProduct._id).length );
+      else {
+        var temp = (latestProduct._id).substring(2, (latestProduct._id).length);
         var tempInt = parseInt(temp) + 1;
         var formattedNumber = ("0" + tempInt).slice(-3);
-        req.body._id = "SP"+ formattedNumber.toString();
+        req.body._id = "SP" + formattedNumber.toString();
       }
       const product = new Product(req.body);
       // res.send( product._id);
@@ -152,4 +156,37 @@ exports.findAllPublished = (req, res) => {
           err.message || "Some error occurred while retrieving Products."
       });
     });
+
 };
+
+exports.upload = (req, res) => {
+  if (!req.file) {
+    return res.status(400).send({ message: 'No file was uploaded' });
+  }
+
+  // Parse the XLSX file into a workbook object
+  const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+
+  // Get the first sheet from the workbook
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+
+  // Convert the worksheet data into an array of JSON objects
+  const data = xlsx.utils.sheet_to_json(worksheet);
+
+  // Save the data to the database
+  Product.insertMany(data, (error, products) => {
+    if (error) {
+      res.status(500).send({ message: error });
+    } else {
+      res.send({ message: 'Data saved successfully', products });
+    }
+  });
+};
+
+
+
+
+
+/*
+    */

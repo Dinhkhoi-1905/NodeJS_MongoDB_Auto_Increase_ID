@@ -1,7 +1,16 @@
+
 module.exports = app => {
-  const products = require("../controllers/product.controller.js");
+  const db = require("../models");
 
   var router = require("express").Router();
+  const products = require("../controllers/product.controller.js");
+
+  const multer = require('multer');
+  const storage = multer.memoryStorage();
+  const upload = multer({ storage: storage });
+
+  router.post('/upload', upload.single('file'), products.upload);
+
 
   // Create a new Tutorial
   router.post("/", products.create);
@@ -23,6 +32,7 @@ module.exports = app => {
 
   // Create a new Tutorial
   router.delete("/", products.deleteAll);
+
 
   app.use("/api/products", router);
 };
